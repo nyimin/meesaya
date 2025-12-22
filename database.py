@@ -12,3 +12,22 @@ def get_db_connection():
     
     conn = psycopg2.connect(db_url)
     return conn
+
+def save_chat_log(user_id, role, text):
+    """
+    Saves a message to the database.
+    role: 'user' or 'bot'
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute("""
+            INSERT INTO chat_history (user_id, role, message_text)
+            VALUES (%s, %s, %s)
+        """, (user_id, role, text))
+        
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Error logging chat: {e}")

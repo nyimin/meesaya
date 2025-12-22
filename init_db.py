@@ -15,6 +15,17 @@ def init_db():
 
     print("Creating Tables...")
 
+    # 0. Chat History
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS chat_history (
+        id SERIAL PRIMARY KEY,
+        user_id VARCHAR(50),       -- The Facebook User ID
+        role VARCHAR(10),          -- 'user' or 'bot'
+        message_text TEXT,         -- What was said
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+
     # 1. Inverters
     cur.execute("""
     CREATE TABLE IF NOT EXISTS market_inverters (

@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request, HTTPException
 from chat_logic import get_ai_reply
+from database import save_chat_log
 import os
 import requests
 import uvicorn
@@ -42,9 +43,16 @@ async def handle_messages(request: Request):
             if "text" in message:
                 user_text = message["text"]
                 
+                # 1. Log the USER'S message
+                save_chat_log(sender_id, "user", user_text)
+                
                 # Get response from AI
                 try:
                     bot_response = get_ai_reply(user_text)
+                    
+                    # 2. Log the BOT'S response
+                    save_chat_log(sender_id, "bot", bot_response)
+                    
                     send_to_facebook(sender_id, bot_response)
                 except Exception as e:
                     print(f"Error processing message: {e}")
