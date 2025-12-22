@@ -78,7 +78,7 @@ def get_ai_reply(user_message):
 
     # Call Gemini via OpenRouter
     response = client.chat.completions.create(
-        model="google/gemini-2.0-flash-exp", # Very fast and cheap
+        model="google/gemini-2.5-flash", # Very fast and cheap
         messages=messages,
         tools=tools,
     )
