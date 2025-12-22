@@ -103,7 +103,7 @@ def get_ai_reply(user_message):
         
         # Get Final Summary
         final_res = client.chat.completions.create(
-            model="google/gemini-2.0-flash-exp",
+            model="google/gemini-2.5-flash",
             messages=messages
         )
         return final_res.choices[0].message.content
