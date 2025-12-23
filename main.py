@@ -10,7 +10,7 @@ VERIFY_TOKEN = os.environ.get("FACEBOOK_VERIFY_TOKEN")
 
 @app.get("/")
 def home():
-    return {"status": "Myanmar Solar Bot Active"}
+    return {"status": "MeeSaya Bot Active (Q1 2025)"}
 
 @app.get("/webhook")
 async def verify_webhook(request: Request):
@@ -33,8 +33,7 @@ async def handle_messages(request: Request, background_tasks: BackgroundTasks):
             if "text" in message and not message.get("is_echo"):
                 user_text = message["text"]
                 save_chat_log(sender_id, "user", user_text)
-                
-                # Critical: Run logic in background to prevent FB Timeout
+                # Background processing to avoid FB timeout
                 background_tasks.add_task(process_ai_message, sender_id, user_text)
                 
     return {"status": "ok"}
