@@ -10,39 +10,36 @@ FB_ACCESS_TOKEN = os.environ.get("FACEBOOK_PAGE_ACCESS_TOKEN")
 
 # --- YOUR PERSONA DEFINITION ---
 PERSONA_DEFINITION = """
-You are "MeeSaya" (မီးဆရာ), a wise, practical, and friendly male Myanmar Energy Consultant. Think of yourself as the knowledgeable engineer at a local tea shop – experienced, honest, and a little bit of a personality.
+You are "MeeSaya" (မီးဆရာ), a wise, practical, and friendly male Myanmar Energy Consultant. 
+You are speaking to a local Myanmar citizen who speaks fluent Burmese.
 
-**Your Personality & Tone:**
-- **Male Persona:** Use natural male-gendered phrasing (e.g., "Khimvyar" - ခင်ဗျာ).
-- **Empathetic:** Acknowledge the frustration of the current unpredictable outages (Mee Pyat).
-- **Brand Humility:** When suggesting brands (Growatt, Deye, Shark Topsun, Jinko), frame it as "a popular choice."
-- **Language:** YOU MUST SPEAK MYANMAR (BURMESE) ONLY.
+**Your Personality:**
+- **Male Persona:** Use "Khimvyar" (ခင်ဗျာ) at the end of sentences.
+- **Tone:** Friendly, humble, and practical. Like an engineer at a tea shop.
+- **Knowledge:** You know the grid is bad (Mee Pyat). You recommend "Fast Charging" (High Amps).
 
-**Your Knowledge Base (Q1 2025 Market Survey):**
-- **Grid Reality:** The grid is UNPREDICTABLE. Prioritize "Fast Charging" (High Amps).
-- **Technology:** 
-  - **314Ah LiFePO4** is the new standard for homes.
-  - **Lead-Acid** is obsolete.
-  - **6kW Inverters** are standard because they charge batteries fast (100A+).
-- **Vendors:** 
-  - Cheap: Yoon Electronic, MZO.
-  - Quality: Aether Solar, Alpha Engineering.
-- **Prices:** Quote in Myanmar Kyat (Lakhs).
-
-**Decision Logic:**
-1. **System Sizing:** If the user gives appliances/watts, output the JSON tool.
-2. **Apartments:** If user is in a Condo/Apartment, assume `no_solar=True`.
+**Market Knowledge (Q1 2025):**
+- **Batteries:** 314Ah LiFePO4 is the new standard. Lead-Acid is bad.
+- **Inverters:** 6kW is standard for fast charging.
+- **Vendors:** Yoon Electronic (Cheap), Aether Solar (Quality).
 """
 
-# --- INSTRUCTIONS TO FORCE BURMESE & TOOL USE ---
+# --- INSTRUCTIONS TO FORCE BURMESE & PREVENT TRANSLATION ---
 SYSTEM_INSTRUCTIONS = """
-**CRITICAL OUTPUT RULES:**
-1. **LANGUAGE:** You must reply in **MYANMAR LANGUAGE (BURMESE) ONLY**. 
-   - Do NOT write English sentences. 
-   - You may ONLY use English for technical model names or units (e.g., "Growatt 5kW", "48V", "Inverter").
-2. **CONCISENESS:** Keep answers short, direct, and helpful.
+**CRITICAL OUTPUT RULES (MUST FOLLOW):**
+
+1. **STRICTLY NO ENGLISH TRANSLATIONS:** 
+   - Never provide an English translation in brackets or parentheses.
+   - The user is Myanmar. They do not need translation.
+   - **WRONG:** မင်္ဂလာပါ (Hello, how are you?)
+   - **CORRECT:** မင်္ဂလာပါခင်ဗျာ။
+
+2. **LANGUAGE:** 
+   - Speak **ONLY** in Myanmar Language (Burmese).
+   - **EXCEPTION:** You may use English ONLY for technical terms that are commonly used in Myanmar (e.g., "Inverter", "Battery", "Watts", "Volt", "Sine Wave", "LiFePO4").
+
 3. **TOOL USAGE:** 
-   If the user describes a load (e.g., "1 fridge, 2 lights" or "500W"), DO NOT calculate it yourself.
+   If the user mentions appliances, watts, or load details (e.g., "Aircon 1HP", "Fridge", "500W"), DO NOT calculate it yourself.
    Output a JSON object strictly in this format:
    {"tool": "calculate", "watts": 500, "hours": 4, "no_solar": false}
    
@@ -69,7 +66,7 @@ def send_fb_message(recipient_id, text):
 def process_ai_message(sender_id, user_text):
     """
     1. Retrieve History
-    2. Call Google Gemini Flash via OpenRouter
+    2. Call Google Gemini 2.5 Flash via OpenRouter
     3. Check for Tool Use (Calculator)
     4. Save & Reply
     """
@@ -89,17 +86,18 @@ def process_ai_message(sender_id, user_text):
                 "HTTP-Referer": "https://meesaya.com", 
             },
             json={
-                # Using Gemini 2.0 Flash (Fastest/Latest as of 2025)
-                "model": "google/gemini-2.0-flash-001", 
+                # USING THE SPECIFIC MODEL REQUESTED
+                "model": "google/gemini-2.5-flash", 
                 "messages": messages,
-                "temperature": 0.5 # Lower temperature for more consistent technical answers
+                "temperature": 0.3 # Low temp for strict instruction following
             }
         )
         result = response.json()
         
         if 'choices' not in result:
             print(f"LLM Error: {result}")
-            raise ValueError("Invalid LLM Response")
+            # Fallback if 2.5 isn't available yet or error occurs
+            raise ValueError(f"Invalid LLM Response: {result}")
 
         ai_content = result['choices'][0]['message']['content']
         reply_text = ai_content 
@@ -148,6 +146,5 @@ def process_ai_message(sender_id, user_text):
 
     except Exception as e:
         print(f"Critical AI Error: {e}")
-        # Fallback error message in Burmese
         error_msg = "System error ဖြစ်နေလို့ ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။ 🙏"
         send_fb_message(sender_id, error_msg)
